@@ -1,28 +1,10 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, Pressable, SafeAreaView, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, SafeAreaView, Text, View } from "react-native";
 import tw from "twrnc";
-
-type RankingItem = {
-    id: string;
-    rank: number;
-    nome: string;
-    avatar: string | null;
-    pontos: number;
-};
-
-const rankingData: RankingItem[] = [
-    { id: '1', rank: 1, nome: 'Ana Beatriz', avatar: null, pontos: 3250 },
-    { id: '2', rank: 2, nome: 'Ricardo Lima', avatar: null, pontos: 2980 },
-    { id: '3', rank: 3, nome: 'Fernanda Costa', avatar: null, pontos: 2610 },
-    { id: '4', rank: 4, nome: 'Juliano Alves', avatar: null, pontos: 1780 },
-    { id: '5', rank: 5, nome: 'Caio Silva', avatar: null, pontos: 1250 },
-    { id: '6', rank: 6, nome: 'Mariana Dias', avatar: null, pontos: 1190 },
-    { id: '7', rank: 7, nome: 'Pedro Martins', avatar: null, pontos: 950 },
-    { id: '8', rank: 8, nome: 'Larissa Souza', avatar: null, pontos: 820 },
-];
+import { RankingItem, RankingResponse, rankingService } from "../services/rankingService";
 
 interface RankingRowProps {
     item: RankingItem;
@@ -63,7 +45,59 @@ const RankingRow = ({ item, currentUserId }: RankingRowProps) => {
 export default function RankingScreen() {
     const router = useRouter();
     const { authData } = useAuth();
-    const currentUserData = rankingData.find(u => u.nome === authData?.nome) || { rank: 5, nome: 'Caio Silva', pontos: 1250, id: '5' };
+
+    const [rankingData, setRankingData] = useState<RankingResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRanking = async () => {
+            if (authData?.id && authData?.token) {
+                try {
+                    setIsLoading(true);
+                    const data = await rankingService.getRanking({
+                        userId: authData.id,
+                        token: authData.token,
+                    });
+                    setRankingData(data);
+                    setError(null);
+                } catch (err: any) {
+                    setError(err.message || "Ocorreu um erro.");
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                setError("Usuário não autenticado.");
+                setIsLoading(false);
+            }
+        };
+
+        fetchRanking();
+    }, [authData]);
+
+    const currentUserData = rankingData?.user_ranking.data.find(u => u.id === String(authData?.id));
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={tw`flex-1 justify-center items-center bg-slate-50`}>
+                <ActivityIndicator size="large" color={tw.color("blue-600")} />
+                <Text style={tw`mt-4 text-slate-600`}>Carregando Ranking...</Text>
+            </SafeAreaView>
+        );
+    }
+
+    if (error) {
+        return (
+            <SafeAreaView style={tw`flex-1 justify-center items-center bg-slate-50 p-6`}>
+                <Text style={tw`text-lg text-red-600 text-center`}>🏆</Text>
+                <Text style={tw`text-lg font-bold text-red-600 text-center mt-2`}>Oops!</Text>
+                <Text style={tw`text-slate-600 text-center mt-2`}>{error}</Text>
+                <Pressable onPress={() => router.back()} style={tw`mt-6 bg-blue-600 py-3 px-6 rounded-full`}>
+                    <Text style={tw`text-white font-bold`}>Voltar</Text>
+                </Pressable>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={tw`flex-1 bg-slate-50`}>
@@ -74,21 +108,23 @@ export default function RankingScreen() {
                 <Text style={tw`text-2xl font-bold text-slate-800 ml-4`}>🏆 Ranking Geral</Text>
             </View>
 
-            <View style={tw`bg-blue-600 rounded-3xl p-6 mx-6 mb-6 shadow-xl shadow-blue-200`}>
-                <Text style={tw`text-white/80 text-center mb-1`}>Sua Posição</Text>
-                <View style={tw`flex-row items-center justify-center gap-4`}>
-                    <Text style={tw`text-5xl font-bold text-white`}>#{currentUserData.rank}</Text>
-                    <View>
-                        <Text style={tw`text-xl font-bold text-white`}>{currentUserData.nome}</Text>
-                        <Text style={tw`text-base text-white/80`}>{currentUserData.pontos} pontos</Text>
+            {currentUserData && (
+                <View style={tw`bg-blue-600 rounded-3xl p-6 mx-6 mb-6 shadow-xl shadow-blue-200`}>
+                    <Text style={tw`text-white/80 text-center mb-1`}>Sua Posição</Text>
+                    <View style={tw`flex-row items-center justify-center gap-4`}>
+                        <Text style={tw`text-5xl font-bold text-white`}>#{currentUserData.rank}</Text>
+                        <View>
+                            <Text style={tw`text-xl font-bold text-white`}>{currentUserData.nome}</Text>
+                            <Text style={tw`text-base text-white/80`}>{currentUserData.pontos} pontos</Text>
+                        </View>
                     </View>
                 </View>
-            </View>
+            )}
 
             <FlatList
-                data={rankingData}
+                data={rankingData?.top_5}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <RankingRow item={item} currentUserId={currentUserData.id} />}
+                renderItem={({ item }) => <RankingRow item={item} currentUserId={String(authData?.id)} />}
                 contentContainerStyle={tw`px-6`}
             />
         </SafeAreaView>

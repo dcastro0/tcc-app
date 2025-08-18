@@ -1,5 +1,5 @@
-import { useAuth } from "@/hooks/useAuth";
-import { LoginFormValues, loginSchema } from "@/schema/loginSchema";
+import { RegisterFormValues, registerSchema } from "@/schema/registerSchema";
+import { authService } from "@/services/authServices";
 import { Feather } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
@@ -19,24 +19,24 @@ import {
 } from "react-native";
 import tw from "twrnc";
 
-export default function LoginScreen() {
-    const { signIn } = useAuth();
-
+export default function RegisterScreen() {
     const {
         control,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm<LoginFormValues>({
-        resolver: zodResolver(loginSchema),
-        defaultValues: { email: "", password: "" },
+    } = useForm<RegisterFormValues>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: { nome: "", email: "", password: "", confirmPassword: "" },
     });
 
-    const onSubmit = async (data: LoginFormValues) => {
+    const onSubmit = async (data: RegisterFormValues) => {
         try {
-            await signIn(data);
-            router.replace("/(tabs)");
+            const response = await authService.signIn(data);
+            Alert.alert("Sucesso!", response.nome, [
+                { text: "OK", onPress: () => router.replace('/login') }
+            ]);
         } catch (error: any) {
-            Alert.alert("Erro no Login", error.message || "Não foi possível entrar.");
+            Alert.alert("Erro no Cadastro", error.message || "Não foi possível se cadastrar.");
         }
     };
 
@@ -51,12 +51,30 @@ export default function LoginScreen() {
                     keyboardShouldPersistTaps="handled"
                 >
                     <View style={tw`items-center mb-10`}>
-                        <View style={tw`bg-blue-100 p-5 rounded-full mb-4`}>
-                            <Feather name="droplet" size={48} color={tw.color("blue-600")} />
-                        </View>
-                        <Text style={tw`text-3xl font-bold text-slate-800`}>Diabetes Care</Text>
-                        <Text style={tw`text-base text-slate-500`}>Controle na palma da mão</Text>
+                        <Text style={tw`text-3xl font-bold text-slate-800`}>Crie sua Conta</Text>
+                        <Text style={tw`text-base text-slate-500`}>É rápido e fácil</Text>
                     </View>
+
+                    <Controller
+                        control={control}
+                        name="nome"
+                        render={({ field: { onChange, onBlur, value } }) => (
+                            <View style={tw`mb-4`}>
+                                <View style={tw`flex-row items-center bg-white rounded-2xl p-4 shadow-sm ${errors.nome ? 'border-2 border-red-500' : 'border-2 border-transparent'}`}>
+                                    <Feather name="user" size={20} color={tw.color("slate-400")} />
+                                    <TextInput
+                                        style={tw`flex-1 ml-3 text-base text-slate-800`}
+                                        placeholder="Digite seu nome completo"
+                                        placeholderTextColor={tw.color("slate-400")}
+                                        onBlur={onBlur}
+                                        onChangeText={onChange}
+                                        value={value}
+                                    />
+                                </View>
+                                {errors.nome && <Text style={tw`text-red-500 mt-1 ml-2`}>{errors.nome.message}</Text>}
+                            </View>
+                        )}
+                    />
 
                     <Controller
                         control={control}
@@ -90,7 +108,7 @@ export default function LoginScreen() {
                                     <Feather name="lock" size={20} color={tw.color("slate-400")} />
                                     <TextInput
                                         style={tw`flex-1 ml-3 text-base text-slate-800`}
-                                        placeholder="Digite sua senha"
+                                        placeholder="Crie uma senha"
                                         placeholderTextColor={tw.color("slate-400")}
                                         secureTextEntry
                                         onBlur={onBlur}
@@ -103,9 +121,27 @@ export default function LoginScreen() {
                         )}
                     />
 
-                    <View style={tw`items-end mb-6`}>
-                        <Pressable><Text style={tw`text-blue-600 font-semibold`}>Esqueceu a senha?</Text></Pressable>
-                    </View>
+                    <Controller
+                        control={control}
+                        name="confirmPassword"
+                        render={({ field: { onChange, onBlur, value } }) => (
+                            <View style={tw`mb-6`}>
+                                <View style={tw`flex-row items-center bg-white rounded-2xl p-4 shadow-sm ${errors.confirmPassword ? 'border-2 border-red-500' : 'border-2 border-transparent'}`}>
+                                    <Feather name="lock" size={20} color={tw.color("slate-400")} />
+                                    <TextInput
+                                        style={tw`flex-1 ml-3 text-base text-slate-800`}
+                                        placeholder="Confirme sua senha"
+                                        placeholderTextColor={tw.color("slate-400")}
+                                        secureTextEntry
+                                        onBlur={onBlur}
+                                        onChangeText={onChange}
+                                        value={value}
+                                    />
+                                </View>
+                                {errors.confirmPassword && <Text style={tw`text-red-500 mt-1 ml-2`}>{errors.confirmPassword.message}</Text>}
+                            </View>
+                        )}
+                    />
 
                     <Pressable
                         onPress={handleSubmit(onSubmit)}
@@ -119,13 +155,15 @@ export default function LoginScreen() {
                         {isSubmitting ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={tw`text-white text-center font-bold text-base`}>Entrar</Text>
+                            <Text style={tw`text-white text-center font-bold text-base`}>Cadastrar</Text>
                         )}
                     </Pressable>
 
                     <View style={tw`flex-row justify-center mt-8`}>
-                        <Text style={tw`text-slate-500`}>Não tem uma conta? </Text>
-                        <Pressable onPress={() => router.replace("/register")}><Text style={tw`text-blue-600 font-bold`}>Cadastre-se</Text></Pressable>
+                        <Text style={tw`text-slate-500`}>Já tem uma conta? </Text>
+                        <Pressable onPress={() => router.replace('/login')}>
+                            <Text style={tw`text-blue-600 font-bold`}>Faça Login</Text>
+                        </Pressable>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
