@@ -1,5 +1,5 @@
 import { RegisterFormValues, registerSchema } from "@/schema/registerSchema";
-import { authService } from "@/services/authServices";
+import { registerService } from "@/services/registerService";
 import { Feather } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
@@ -31,10 +31,8 @@ export default function RegisterScreen() {
 
     const onSubmit = async (data: RegisterFormValues) => {
         try {
-            const response = await authService.signIn(data);
-            Alert.alert("Sucesso!", response.nome, [
-                { text: "OK", onPress: () => router.replace('/login') }
-            ]);
+            const response = await registerService.signUp(data);
+            Alert.alert("Sucesso!", "" + response.message + " Você já pode fazer login.");
         } catch (error: any) {
             Alert.alert("Erro no Cadastro", error.message || "Não foi possível se cadastrar.");
         }

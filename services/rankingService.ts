@@ -1,6 +1,5 @@
+import { api } from "@/services/api";
 import axios from 'axios';
-
-const API_URL = "https://dcastr0caio.pythonanywhere.com/api";
 
 export type RankingItem = {
     id: string;
@@ -25,7 +24,7 @@ interface GetRankingParams {
 
 async function getRanking({ userId, token }: GetRankingParams): Promise<RankingResponse> {
     try {
-        const response = await axios.get<RankingResponse>(`${API_URL}/ranking/${userId}`, {
+        const response = await api.get<RankingResponse>(`/ranking/${userId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
