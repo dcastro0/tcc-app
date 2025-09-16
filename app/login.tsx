@@ -20,7 +20,7 @@ import {
 import tw from "twrnc";
 
 export default function LoginScreen() {
-    const { signIn } = useAuth();
+    const { signIn, authData } = useAuth();
 
     const {
         control,
@@ -34,6 +34,13 @@ export default function LoginScreen() {
     const onSubmit = async (data: LoginFormValues) => {
         try {
             await signIn(data);
+            // authData deve estar preenchido após signIn resolver
+            const streak = (authData as any)?.streak_count ?? 0;
+            if (streak && streak > 0) {
+                Alert.alert("Bem-vindo de volta!", `Sua sequência atual é de ${streak} dia(s). Continue assim!`);
+            } else {
+                Alert.alert("Bem-vindo!", "Boa sorte no seu controle. Registre sua primeira medição hoje!");
+            }
             router.replace("/(tabs)");
         } catch (error: any) {
             Alert.alert("Erro no Login", error.message || "Não foi possível entrar.");

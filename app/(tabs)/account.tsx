@@ -1,3 +1,4 @@
+// /app/account.tsx
 import { useAuth } from "@/hooks/useAuth";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -30,6 +31,11 @@ export default function AccountScreen() {
         );
     }
 
+    const totalMedicoes = (authData as any)?.totalMedicoes ?? 0;
+    const pontos = (authData as any)?.pontos ?? 0;
+    const membroDesde = (authData as any)?.membroDesde ?? "—";
+    const streak = (authData as any)?.streak_count ?? 0;
+
     return (
         <SafeAreaView style={tw`flex-1 bg-slate-50`}>
             <ScrollView contentContainerStyle={tw`p-6`}>
@@ -51,7 +57,7 @@ export default function AccountScreen() {
                                 style={tw`w-20 h-20 rounded-full bg-blue-100 items-center justify-center`}
                             >
                                 <Text style={tw`text-3xl font-bold text-blue-600`}>
-                                    {authData.nome[0]}
+                                    {authData.nome?.[0] ?? "U"}
                                 </Text>
                             </View>
                         )}
@@ -65,21 +71,21 @@ export default function AccountScreen() {
                     <View style={tw`border-t border-slate-100 mt-6 pt-4 flex-row justify-around`}>
                         <View style={tw`items-center`}>
                             <Text style={tw`text-xl font-bold text-blue-600`}>
-                                {authData.totalMedicoes || 84}
+                                {totalMedicoes}
                             </Text>
                             <Text style={tw`text-sm text-slate-500`}>Medições</Text>
                         </View>
                         <View style={tw`items-center`}>
                             <Text style={tw`text-xl font-bold text-blue-600`}>
-                                {authData.pontos || 1250}
+                                {pontos}
                             </Text>
                             <Text style={tw`text-sm text-slate-500`}>Pontos</Text>
                         </View>
                         <View style={tw`items-center`}>
                             <Text style={tw`text-xl font-bold text-blue-600`}>
-                                {authData.membroDesde || "Ago 2025"}
+                                {streak}
                             </Text>
-                            <Text style={tw`text-sm text-slate-500`}>Membro desde</Text>
+                            <Text style={tw`text-sm text-slate-500`}>Dias de ofensiva</Text>
                         </View>
                     </View>
                 </View>

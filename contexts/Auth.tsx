@@ -2,6 +2,7 @@ import { AuthContextData, SignInProp } from "@/interfaces/AuthContextData";
 import { AuthData } from "@/interfaces/AuthData";
 import { AuthProviderProps } from "@/interfaces/AuthProviderProps";
 import { authService } from "@/services/authServices";
+import { sendHeartbeat, trySendPendingHeartbeat } from "@/services/heartbeat";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
     createContext,
@@ -22,7 +23,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             try {
                 const auth = await AsyncStorage.getItem("@AuthData");
                 if (auth) {
-                    setAuthData(JSON.parse(auth));
+                    const parsed = JSON.parse(auth);
+                    setAuthData(parsed);
+                    if (parsed?.token) {
+                        await trySendPendingHeartbeat(parsed.token);
+                    }
                 }
             } catch (error) {
                 console.error("Falha ao carregar dados de autenticação:", error);
@@ -30,16 +35,17 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setLoading(false);
             }
         }
-
         loadAuthDataFromStorage();
     }, []);
 
     const signIn = useCallback(async (data: SignInProp): Promise<void> => {
         const auth = await authService.signIn(data);
-
         if (auth && Object.keys(auth).length > 0) {
             setAuthData(auth);
             await AsyncStorage.setItem("@AuthData", JSON.stringify(auth));
+            if (auth.token) {
+                await sendHeartbeat(auth.token);
+            }
         } else {
             throw new Error("Recebidos dados de autenticação inválidos do serviço.");
         }

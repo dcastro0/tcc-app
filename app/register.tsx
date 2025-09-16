@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/useAuth";
 import { RegisterFormValues, registerSchema } from "@/schema/registerSchema";
 import { registerService } from "@/services/registerService";
 import { Feather } from "@expo/vector-icons";
@@ -20,6 +21,8 @@ import {
 import tw from "twrnc";
 
 export default function RegisterScreen() {
+    const { signIn, authData } = useAuth();
+
     const {
         control,
         handleSubmit,
@@ -32,7 +35,15 @@ export default function RegisterScreen() {
     const onSubmit = async (data: RegisterFormValues) => {
         try {
             const response = await registerService.signUp(data);
-            Alert.alert("Sucesso!", "" + response.message + " Você já pode fazer login.");
+            // auto-login após cadastro
+            await signIn({ email: data.email, password: data.password });
+            const streak = (authData as any)?.streak_count ?? 0;
+            if (streak && streak > 0) {
+                Alert.alert("Registro concluído!", `Bem-vindo! Sua sequência atual é de ${streak} dia(s).`);
+            } else {
+                Alert.alert("Registro concluído!", "Bem-vindo! Comece registrando sua primeira medição.");
+            }
+            router.replace("/(tabs)");
         } catch (error: any) {
             Alert.alert("Erro no Cadastro", error.message || "Não foi possível se cadastrar.");
         }
