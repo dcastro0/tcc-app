@@ -1,13 +1,13 @@
-import { AuthContext } from "@/contexts/Auth";
-import { useContext } from "react";
+import { AuthContext } from "@/contexts/Auth"
+import { useContext } from "react"
 
 export const useAuth = () => {
-    const { authData, loading, signIn, signOut } = useContext(AuthContext);
+  const { authData, loading, signIn, signOut } = useContext(AuthContext)
 
-    return {
-        authData,
-        loading,
-        signIn,
-        signOut,
-    };
-};
+  return {
+    authData,
+    loading,
+    signIn,
+    signOut,
+  }
+}
