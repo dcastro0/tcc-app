@@ -41,7 +41,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="anchievements"
+        name="achievements"
         options={{
           title: "Recompensas",
           tabBarIcon: ({ color }) => (
