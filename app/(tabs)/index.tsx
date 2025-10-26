@@ -1,10 +1,10 @@
 import { useAuth } from "@/hooks/useAuth";
-import { sendHeartbeat } from "@/services/heartbeat"; // 4. Importar
+import { sendHeartbeat } from "@/services/heartbeat";
 import { syncMeasurements } from "@/services/measurementService"; // 3. Importar
 import {
   getMeasurements,
   getUnsyncedMeasurements,
-  initMeasurementTable, // 1. Importar
+  initMeasurementTable,
   markMeasurementsAsSynced,
   Measurement,
 } from "@/services/orm/entities/measurement";
@@ -24,7 +24,6 @@ import tw from "twrnc";
 
 export default function HomeScreen() {
   const router = useRouter()
-  // 5. Pegar o updateAuthData do hook
   const { authData, updateAuthData } = useAuth()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -55,7 +54,7 @@ export default function HomeScreen() {
     }, [load]),
   )
 
-  // 6. COPIAR a lógica de 'attemptSync' da tela 'medir.tsx'
+  // --- ALTERAÇÃO 1: attemptSync não mexe mais com o updateAuthData ---
   const attemptSync = async () => {
     if (!authData?.token) return
 
@@ -63,21 +62,16 @@ export default function HomeScreen() {
       const unsyncedMeasurements = await getUnsyncedMeasurements()
       if (unsyncedMeasurements.length > 0) {
         console.log(`(Home) Sincronizando ${unsyncedMeasurements.length} medições...`)
-        const response = await syncMeasurements(
+        // Apenas envia os dados. O backend atualiza os pontos.
+        await syncMeasurements(
           authData.token,
           unsyncedMeasurements,
         )
 
         const idsToUpdate = unsyncedMeasurements.map((m) => m.id!)
         await markMeasurementsAsSynced(idsToUpdate)
-
-        // Se a sincronização desbloqueou conquistas, ela atualizou os pontos no backend.
-        // Vamos atualizar o frontend com os novos pontos.
-        if (response.unlocked_achievements && response.unlocked_achievements.length > 0) {
-            // Recalcula o total de pontos
-            const newTotalPoints = (authData.pontos || 0) + response.unlocked_achievements.reduce((sum, ach) => sum + ach.points_reward, 0);
-            updateAuthData({ pontos: newTotalPoints });
-        }
+        
+        console.log("(Home) Sincronização de medições concluída.")
       } else {
         console.log("(Home) Nada para sincronizar.")
       }
@@ -86,22 +80,29 @@ export default function HomeScreen() {
     }
   }
 
-  // 7. ATUALIZAR a função onRefresh
+  // --- ALTERAÇÃO 2: onRefresh usa o heartbeat como fonte da verdade ---
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
     if (authData?.token) {
-      // Sincroniza medições (e atualiza pontos se houver conquistas)
+      // 1. Envia as medições pendentes para o backend.
+      // O backend irá recalcular pontos e total_medicoes
       await attemptSync()
 
-      // Sincroniza a ofensiva (streak)
+      // 2. Envia o heartbeat. O backend irá atualizar o streak
+      // e retornar TODOS os dados frescos (pontos, streak, total_medicoes)
       const heartbeatResponse = await sendHeartbeat(authData.token)
+      
       if (heartbeatResponse) {
-        updateAuthData({ streak_count: heartbeatResponse.streak_count })
+        // 3. Atualiza o frontend com a fonte da verdade do backend
+        updateAuthData({ 
+          streak_count: heartbeatResponse.streak_count,
+          pontos: heartbeatResponse.pontos,
+          totalMedicoes: heartbeatResponse.total_medicoes 
+        })
       }
     }
     // Recarrega os dados locais
     await load()
-    // 'setRefreshing(false)' é chamado dentro do 'finally' do 'load()'
   }, [load, authData?.token, updateAuthData])
 
   const lastThree = measurements.slice(0, 3)
@@ -109,6 +110,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={tw`flex-1 bg-slate-50`}>
+      {/* ... (O resto do seu JSX permanece exatamente igual) ... */}
       <View style={tw`absolute top-16 right-6 z-50`}>
         <View style={tw`bg-white px-3 py-2 rounded-full shadow-md items-center justify-center`}>
           <Text style={tw`text-sm font-bold text-blue-600`}>🔥 {diasOfensiva}</Text>

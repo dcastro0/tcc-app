@@ -3,10 +3,16 @@ import { api } from "./api"
 
 const HEARTBEAT_KEY = "@LastHeartbeat"
 
+// --- ALTERAÇÃO AQUI ---
+// Adicionamos os novos campos que o backend envia
 interface HeartbeatResponse {
   streak_count: number
   last_active_date: string
+  pontos: number
+  total_medicoes: number
+  unlocked_achievements: any[] // Adicionando também este
 }
+// --- FIM DA ALTERAÇÃO ---
 
 async function sendHeartbeat(token: string): Promise<HeartbeatResponse | null> {
   const today = new Date().toISOString().split("T")[0] // YYYY-MM-DD
@@ -19,7 +25,7 @@ async function sendHeartbeat(token: string): Promise<HeartbeatResponse | null> {
       { local_date: today },
       { headers: { Authorization: `Bearer ${token}` } },
     )
-    // Retorna os dados do backend (ex: { streak_count: 5 })
+    // Agora o response.data inclui { streak_count, pontos, total_medicoes, ... }
     return response.data
   } catch (error) {
     console.error("Erro ao enviar batimento cardíaco:", error)
@@ -38,4 +44,4 @@ async function trySendPendingHeartbeat(token: string): Promise<HeartbeatResponse
   return null
 }
 
-export { sendHeartbeat, trySendPendingHeartbeat }
+export { HeartbeatResponse, sendHeartbeat, trySendPendingHeartbeat }; // Exporte a interface se precisar

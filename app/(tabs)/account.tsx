@@ -3,25 +3,27 @@ import { Feather } from "@expo/vector-icons"
 import { router } from "expo-router"
 import React from "react"
 import {
-    ActivityIndicator,
-    Image,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native"
-// 1. IMPORT CORRIGIDO
 import { SafeAreaView } from "react-native-safe-area-context"
 import tw from "twrnc"
 
 export default function AccountScreen() {
   const { signOut, authData } = useAuth()
 
+  // --- 1. MENU ATUALIZADO ---
   const menuOptions = [
-    { id: 1, label: "Editar Perfil", icon: "user", screen: "/editar-perfil" },
-    { id: 2, label: "Configurações", icon: "settings", screen: "/configuracoes" },
-    { id: 3, label: "Ajuda e Suporte", icon: "help-circle", screen: "/ajuda" },
+    { id: 1, label: "Editar Perfil", icon: "user", screen: "/edit_profile" },
+    { id: 2, label: "Lembretes", icon: "clock", screen: "/lembretes" }, // Adicionado
+    { id: 3, label: "Configurações", icon: "settings", screen: "/config" },
+    { id: 4, label: "Ajuda e Suporte", icon: "help-circle", screen: "/help" },
   ]
+  // --- FIM DA ATUALIZAÇÃO ---
 
   if (!authData) {
     return (
@@ -31,8 +33,6 @@ export default function AccountScreen() {
     )
   }
 
-  // 2. ACESSO CORRIGIDO: Acessa diretamente as propriedades
-  // que já estão na interface AuthData.
   const totalMedicoes = authData.totalMedicoes ?? 0
   const pontos = authData.pontos ?? 0
   const membroDesde = authData.membroDesde ?? "—"
@@ -94,7 +94,10 @@ export default function AccountScreen() {
           {menuOptions.map((option, index) => (
             <Pressable
               key={option.id}
-              // TODO: Adicionar navegação: onPress={() => router.push(option.screen)}
+              // --- 2. NAVEGAÇÃO ATIVADA ---
+              // (O 'as any' é para o TypeScript aceitar a string da rota)
+              onPress={() => router.push(option.screen as any)}
+              // --- FIM DA ATIVAÇÃO ---
               style={({ pressed }) => [
                 tw`flex-row items-center justify-between p-5`,
                 pressed && tw`bg-slate-50`,

@@ -1,6 +1,7 @@
 import { AuthProvider } from "@/contexts/Auth";
 import { migrateDb } from "@/services/orm/migrations";
 import { useFonts } from "expo-font";
+import * as Notifications from 'expo-notifications';
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -8,6 +9,19 @@ import { useEffect, useState } from "react";
 import "react-native-reanimated";
 
 SplashScreen.preventAutoHideAsync();
+
+// --- 2. ADICIONAR HANDLER ---
+// Configura como as notificações devem aparecer quando a app está aberta
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true, // Importante para lembretes
+    shouldSetBadge: false,
+  }),
+});
+// --- FIM DA ADIÇÃO ---
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -57,6 +71,11 @@ export default function RootLayout() {
         <Stack.Screen name="ranking" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="historico"/>
+        {/* --- 3. ADICIONAR NOVA TELA --- */}
+        <Stack.Screen name="lembretes" options={{ headerShown: false }} />
+        <Stack.Screen name="config" options={{ headerShown: false }} />
+        <Stack.Screen name="edit_profile" options={{ headerShown: false }} />
+        <Stack.Screen name="help" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="dark" />
     </AuthProvider>
