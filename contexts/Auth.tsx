@@ -26,7 +26,15 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const parsed = JSON.parse(auth)
           setAuthData(parsed)
           if (parsed?.token) {
-            await trySendPendingHeartbeat(parsed.token)
+            // Atualiza o streak ao carregar o app, se necessário
+            const hbResponse = await trySendPendingHeartbeat(parsed.token)
+            if (hbResponse) {
+              // Se o heartbeat rodou, atualiza o authData
+              setAuthData((prevData) => ({
+                ...prevData!,
+                streak_count: hbResponse.streak_count,
+              }))
+            }
           }
         }
       } catch (error) {
@@ -38,17 +46,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loadAuthDataFromStorage()
   }, [])
 
-  // 1. MUDANÇA: A função agora retorna Promise<AuthData>
   const signIn = useCallback(
     async (data: SignInProp): Promise<AuthData> => {
       const auth = await authService.signIn(data)
       if (auth && Object.keys(auth).length > 0) {
+        // Envia o heartbeat e já pega o streak_count atualizado
+        const hbResponse = await sendHeartbeat(auth.token)
+        if (hbResponse) {
+          auth.streak_count = hbResponse.streak_count
+        }
+
         setAuthData(auth)
         await AsyncStorage.setItem("@AuthData", JSON.stringify(auth))
-        if (auth.token) {
-          await sendHeartbeat(auth.token)
-        }
-        // 2. MUDANÇA: Retorna os dados do usuário para a tela que o chamou
         return auth
       } else {
         throw new Error(
@@ -64,16 +73,33 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await AsyncStorage.removeItem("@AuthData")
   }, [])
 
+  // 1. ADICIONADO: Função para atualizar o authData (streak/pontos)
+  const updateAuthData = useCallback(async (newData: Partial<AuthData>) => {
+    setAuthData((currentData) => {
+      if (!currentData) return undefined
+
+      const updatedData = { ...currentData, ...newData }
+
+      // Salva a atualização no AsyncStorage
+      AsyncStorage.setItem("@AuthData", JSON.stringify(updatedData)).catch(
+        (err) => {
+          console.error("Falha ao salvar authData atualizado:", err)
+        },
+      )
+      
+      return updatedData
+    })
+  }, [])
+
   const contextValue = useMemo(
     () => ({
       authData,
       loading,
       signIn,
       signOut,
-      // 3. MUDANÇA: Remove 'streak_count' (que não existe) do contexto.
-      // Os componentes devem usar 'authData.streak_count'
+      updateAuthData, // 2. Adiciona a função ao contexto
     }),
-    [authData, loading, signIn, signOut],
+    [authData, loading, signIn, signOut, updateAuthData], // 3. Adiciona às dependências
   )
 
   return (

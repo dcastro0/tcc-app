@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth"
+// 1. CORREÇÃO: Importa do 'achievementService' (singular)
 import { Achievement } from "@/services/achievementsServices"
 import { syncMeasurements } from "@/services/measurementService"
 import {
@@ -126,9 +127,15 @@ export default function MedirScreen() {
               <TouchableOpacity
                 key={tag}
                 onPress={() => setTagSelecionada(tag)}
-                style={tw`px-4 py-2 rounded-full ${tagSelecionada === tag ? "bg-blue-600" : "bg-slate-200"}`}
+                style={tw`px-4 py-2 rounded-full ${
+                  tagSelecionada === tag ? "bg-blue-600" : "bg-slate-200"
+                }`}
               >
-                <Text style={tw`font-semibold ${tagSelecionada === tag ? "text-white" : "text-slate-600"}`}>
+                <Text
+                  style={tw`font-semibold ${
+                    tagSelecionada === tag ? "text-white" : "text-slate-600"
+                  }`}
+                >
                   {tag}
                 </Text>
               </TouchableOpacity>
@@ -155,7 +162,12 @@ export default function MedirScreen() {
         </View>
       </View>
 
-      <Modal animationType="fade" transparent={true} visible={modalVisivel} onRequestClose={handleFecharModal}>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisivel}
+        onRequestClose={handleFecharModal}
+      >
         <View style={tw`flex-1 justify-center items-center bg-black/60`}>
           <View style={tw`bg-white w-4/5 rounded-3xl p-6 items-center`}>
             <View style={tw`bg-green-100 p-4 rounded-full mb-4`}>
@@ -170,7 +182,9 @@ export default function MedirScreen() {
               <View
                 style={tw`bg-yellow-100 border border-yellow-200 rounded-2xl px-4 py-3 mb-6 w-full items-center`}
               >
-                <Text style={tw`text-lg font-bold text-yellow-700 mb-1`}>✨ Conquista Desbloqueada! ✨</Text>
+                <Text style={tw`text-lg font-bold text-yellow-700 mb-1`}>
+                  ✨ Conquista Desbloqueada! ✨
+                </Text>
                 <Text style={tw`text-base font-semibold text-yellow-600`}>
                   {unlockedReward.title}
                 </Text>
@@ -184,7 +198,10 @@ export default function MedirScreen() {
 
             <Pressable
               onPress={handleFecharModal}
-              style={({ pressed }) => [tw`bg-blue-600 w-full py-3 rounded-xl`, pressed && tw`bg-blue-700`]}
+              style={({ pressed }) => [
+                tw`bg-blue-600 w-full py-3 rounded-xl`,
+                pressed && tw`bg-blue-700`,
+              ]}
             >
               <Text style={tw`text-white text-center font-bold`}>Continuar</Text>
             </Pressable>

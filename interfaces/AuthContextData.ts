@@ -1,5 +1,5 @@
 import { LoginFormValues } from "@/schema/loginSchema"; // 1. Importa do schema
-import { AuthData } from "./AuthData"
+import { AuthData } from "./AuthData";
 
 // 2. Remove a interface duplicada 'SignInProp'
 
@@ -9,7 +9,9 @@ interface AuthContextData {
   signIn: (data: LoginFormValues) => Promise<AuthData>
   signOut: () => Promise<void>
   loading: boolean
+  updateAuthData: (newData: Partial<AuthData>) => Promise<void>
 }
 
 // 4. Exporta LoginFormValues como SignInProp (ou apenas usa LoginFormValues)
-export { AuthContextData, AuthData, type LoginFormValues as SignInProp }
+export { AuthContextData, AuthData, type LoginFormValues as SignInProp };
+

@@ -20,7 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import tw from "twrnc"
 
 export default function LoginScreen() {
-  const { signIn } = useAuth() // 2. Não precisamos mais do authData aqui
+  const { signIn } = useAuth() 
 
   const {
     control,

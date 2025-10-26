@@ -1,11 +1,15 @@
 import { useAuth } from "@/hooks/useAuth";
+import { sendHeartbeat } from "@/services/heartbeat"; // 4. Importar
+import { syncMeasurements } from "@/services/measurementService"; // 3. Importar
 import {
   getMeasurements,
-  initMeasurementTable,
+  getUnsyncedMeasurements,
+  initMeasurementTable, // 1. Importar
+  markMeasurementsAsSynced,
   Measurement,
 } from "@/services/orm/entities/measurement";
 import { Feather } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router"; // 1. Importa useFocusEffect
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -15,24 +19,22 @@ import {
   Text,
   View,
 } from "react-native";
-// 2. Importa o SafeAreaView correto
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
 export default function HomeScreen() {
   const router = useRouter()
-  const { authData } = useAuth()
+  // 5. Pegar o updateAuthData do hook
+  const { authData, updateAuthData } = useAuth()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [measurements, setMeasurements] = useState<Measurement[]>([])
 
-  // usa campos do backend
   const nome = authData?.nome ?? "Usuário"
-  const pontosTotais = authData?.pontos ?? 0 // 3. CORREÇÃO: Usa o total de pontos direto do backend
+  const pontosTotais = authData?.pontos ?? 0
   const diasOfensiva = authData?.streak_count ?? 0
 
   const load = useCallback(async () => {
-    // Não seta loading(true) aqui, useFocusEffect já faz isso
     try {
       await initMeasurementTable()
       const rows = await getMeasurements()
@@ -46,29 +48,67 @@ export default function HomeScreen() {
     }
   }, [])
 
-  // 4. CORREÇÃO: Troca useEffect por useFocusEffect
   useFocusEffect(
     useCallback(() => {
-      setLoading(true) // Mostra o loader sempre que a tela foca
+      setLoading(true)
       load()
     }, [load]),
   )
 
+  // 6. COPIAR a lógica de 'attemptSync' da tela 'medir.tsx'
+  const attemptSync = async () => {
+    if (!authData?.token) return
+
+    try {
+      const unsyncedMeasurements = await getUnsyncedMeasurements()
+      if (unsyncedMeasurements.length > 0) {
+        console.log(`(Home) Sincronizando ${unsyncedMeasurements.length} medições...`)
+        const response = await syncMeasurements(
+          authData.token,
+          unsyncedMeasurements,
+        )
+
+        const idsToUpdate = unsyncedMeasurements.map((m) => m.id!)
+        await markMeasurementsAsSynced(idsToUpdate)
+
+        // Se a sincronização desbloqueou conquistas, ela atualizou os pontos no backend.
+        // Vamos atualizar o frontend com os novos pontos.
+        if (response.unlocked_achievements && response.unlocked_achievements.length > 0) {
+            // Recalcula o total de pontos
+            const newTotalPoints = (authData.pontos || 0) + response.unlocked_achievements.reduce((sum, ach) => sum + ach.points_reward, 0);
+            updateAuthData({ pontos: newTotalPoints });
+        }
+      } else {
+        console.log("(Home) Nada para sincronizar.")
+      }
+    } catch (error) {
+      console.error("(Home) Falha na sincronização:", error)
+    }
+  }
+
+  // 7. ATUALIZAR a função onRefresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
+    if (authData?.token) {
+      // Sincroniza medições (e atualiza pontos se houver conquistas)
+      await attemptSync()
+
+      // Sincroniza a ofensiva (streak)
+      const heartbeatResponse = await sendHeartbeat(authData.token)
+      if (heartbeatResponse) {
+        updateAuthData({ streak_count: heartbeatResponse.streak_count })
+      }
+    }
+    // Recarrega os dados locais
     await load()
-    // TODO: Adicionar lógica de sync com backend aqui também
-  }, [load])
+    // 'setRefreshing(false)' é chamado dentro do 'finally' do 'load()'
+  }, [load, authData?.token, updateAuthData])
 
   const lastThree = measurements.slice(0, 3)
   const ultimaMedicao = measurements.length > 0 ? measurements[0] : null
 
-  // Removemos pontosExtras, pois os pontosTotais vêm direto do backend
-  // const pontosExtras = (measurements.length || 0) * 50; (REMOVIDO)
-
   return (
     <SafeAreaView style={tw`flex-1 bg-slate-50`}>
-      {/* BADGE pequeno no topo direito */}
       <View style={tw`absolute top-16 right-6 z-50`}>
         <View style={tw`bg-white px-3 py-2 rounded-full shadow-md items-center justify-center`}>
           <Text style={tw`text-sm font-bold text-blue-600`}>🔥 {diasOfensiva}</Text>
@@ -145,7 +185,7 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            onPress={() => router.push("/(tabs)/achievements")} // 5. CORREÇÃO: Link corrigido
+            onPress={() => router.push("/(tabs)/achievements")}
             style={({ pressed }) => [
               tw`flex-1 bg-white p-4 rounded-2xl shadow-md shadow-slate-200 items-center justify-center`,
               pressed && tw`bg-gray-100`,
@@ -177,8 +217,9 @@ export default function HomeScreen() {
                 <Pressable
                   key={medicao.id ?? index}
                   onPress={() => router.push("/historico")}
-                  style={tw`flex-row justify-between items-center py-3 ${index < lastThree.length - 1 ? "border-b border-slate-100" : ""
-                    }`}
+                  style={tw`flex-row justify-between items-center py-3 ${
+                    index < lastThree.length - 1 ? "border-b border-slate-100" : ""
+                  }`}
                 >
                   <View style={tw`flex-row items-center gap-3`}>
                     <View style={tw`bg-blue-50 p-2 rounded-full`}>
