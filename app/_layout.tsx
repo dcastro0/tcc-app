@@ -10,18 +10,15 @@ import "react-native-reanimated";
 
 SplashScreen.preventAutoHideAsync();
 
-// --- 2. ADICIONAR HANDLER ---
-// Configura como as notificações devem aparecer quando a app está aberta
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
-    shouldPlaySound: true, // Importante para lembretes
+    shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
-// --- FIM DA ADIÇÃO ---
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -71,7 +68,6 @@ export default function RootLayout() {
         <Stack.Screen name="ranking" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="historico"/>
-        {/* --- 3. ADICIONAR NOVA TELA --- */}
         <Stack.Screen name="lembretes" options={{ headerShown: false }} />
         <Stack.Screen name="config" options={{ headerShown: false }} />
         <Stack.Screen name="edit_profile" options={{ headerShown: false }} />
